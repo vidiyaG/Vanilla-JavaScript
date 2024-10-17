@@ -24,15 +24,18 @@
                             placeholder="Start typing..."
                         />
                         <div class="btn-container">
-                            <i class="fa fa-search" id="seach-btn"></i>
                             <i class="fa fa-remove" id="clear-btn"></i>
                         </div>
                     </div>
+                    <ol id="suggestions-container" class="suggestions"></ol>
+                    <div class="spinner-container">
+                        <i class="fa fa-spinner fa-spin" id="spinner-icon"></i>
+                    </div>
                 </div>
-                <ul id="suggestions-container" class="suggestions"></ul>
             </div>
         </div>
         <script src="main.js" type="module"></script>
+        <script src="../TASK-3/database.js" type="module"></script>
         <script src="../TASK-3/fetchDistrictsFromCSV.js" type="module"></script>
     </body>
 </html>
