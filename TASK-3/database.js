@@ -15,6 +15,9 @@ export class LocalDatabase {
     simulateDelay() {
         return new Promise((resolve) => setTimeout(resolve, QUERY_DELEY)); // 5-second delay
     }
+    generateIndexKey(record) {
+        return `${record.State_name}|${record.District_name}`; // Compound index using State and District
+    }
 
     logOperation(operation, startTime, sizeBefore, sizeAfter) {
         const endTime = Date.now();
@@ -64,9 +67,18 @@ export class LocalDatabase {
 
         await this.simulateDelay();
 
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            // Check if the record already exists
+            if (this.records.has(record.District_code)) {
+                return reject("Record already exists with this District_code.");
+            }
+
+            // Insert the record into the database
             this.records.set(record.District_code, record);
-            this.index[record.District_code] = record;
+
+            // Generate a compound index key based on the relevant fields
+            const indexKey = this.generateIndexKey(record);
+            this.index[indexKey] = record; // Create a new index entry
 
             this.logOperation(
                 "Insert",
@@ -87,8 +99,17 @@ export class LocalDatabase {
 
         return new Promise((resolve, reject) => {
             if (this.records.has(District_code)) {
+                // Remove the old index entry for the existing record
+                const oldRecord = this.records.get(District_code);
+                const oldIndexKey = this.generateIndexKey(oldRecord);
+                delete this.index[oldIndexKey]; // Remove the old index
+
+                // Update the record in the database
                 this.records.set(District_code, newRecord);
-                this.index[District_code] = newRecord;
+
+                // Create a new index entry based on the updated record
+                const newIndexKey = this.generateIndexKey(newRecord);
+                this.index[newIndexKey] = newRecord; // Add new index entry
 
                 this.logOperation(
                     "Update",
@@ -102,9 +123,7 @@ export class LocalDatabase {
             }
         });
     }
-    generateIndexKey(record) {
-        return `${record.State_name}|${record.District_name}`; // Compound index using State and District
-    }
+
     // Fetch records based on query
     async fetch(criteria = null, page = 0, limit = 10) {
         const startTime = Date.now();
@@ -113,14 +132,15 @@ export class LocalDatabase {
         return new Promise((resolve) => {
             let results = [];
 
-            if (
-                criteria &&
-                criteria.District_name &&
-                this.index[criteria.District_name]
-            ) {
-                results = this.index[criteria.District_name]; // Fetch from the index
-            } else {
-                if (criteria) {
+            if (criteria) {
+                // Generate the compound index key based on provided criteria
+                const indexKey = this.generateIndexKey(criteria);
+
+                // Check if the index key exists
+                if (this.index[indexKey]) {
+                    results = this.index[indexKey]; // Fetch from the index
+                } else {
+                    // If no index is found, filter through the records
                     results = Array.from(this.records.values()).filter(
                         (record) => {
                             for (let key in criteria) {
@@ -136,15 +156,16 @@ export class LocalDatabase {
                             return true;
                         }
                     );
-                    if (criteria.District_name) {
-                        this.index[criteria.District_name] = results;
-                    }
-                } else {
-                    results = Array.from(this.records.values());
+
+                    // Cache the results into the index for future fetches
+                    this.index[indexKey] = results;
                 }
+            } else {
+                results = Array.from(this.records.values());
             }
-            //Number of records per given query
-            const sizeBefore = results?.length;
+
+            // Number of records before pagination
+            const sizeBefore = results.length;
 
             // Handle pagination (offset and limit)
             const offset = page * limit;
