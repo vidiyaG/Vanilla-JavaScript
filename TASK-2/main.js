@@ -141,6 +141,9 @@ suggestionsContainer.addEventListener(
 clearBtn.addEventListener("click", () => {
     searchInput.value = "";
     suggestionsContainer.innerHTML = "";
+    currentQuery = null;
+    hasMoreResults = true;
+    fetchSuggestions(true);
 });
 window.addEventListener("load", async (event) => {
     // page is fully loaded
