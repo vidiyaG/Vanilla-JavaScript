@@ -1,4 +1,4 @@
-import { LocalDatabase, initializeDatabase } from "../TASK-3/database.js";
+import { initializeDatabase } from "../TASK-3/database.js";
 import {
     showElement,
     hideElement,
