@@ -8,18 +8,18 @@ const CSV_FILE = "../TASK-3/india-districts.csv";
 
 export class LocalDatabase {
     constructor() {
-        this.records = new Map(); // Map for faster access
+        connected: false, (this.records = new Map()); // Map for faster access
         this.index = {}; // Indexing for faster lookups
         this.loadRecords();
     }
 
     logOperation(operation, startTime, sizeBefore, sizeAfter) {
         const endTime = Date.now();
-        console.log(
-            `Operation: ${operation} | Time Taken: ${
-                endTime - startTime
-            } ms | Records Before: ${sizeBefore} | Records After: ${sizeAfter}`
-        );
+        // console.log(
+        //     `Operation: ${operation} | Time Taken: ${
+        //         endTime - startTime
+        //     } ms | Records Before: ${sizeBefore} | Records After: ${sizeAfter}`
+        // );
     }
 
     // loadRecords1() {
@@ -148,8 +148,8 @@ export class LocalDatabase {
         return new Promise((resolve) => setTimeout(resolve, 5000)); // 5-second delay
     }
     async fetchData(criteria = null, page = 0, limit = 10) {
-        await this.simulateDelay();
         const startTime = Date.now();
+        await this.simulateDelay();
         const sizeBefore = this.records.size;
         let results = [];
 

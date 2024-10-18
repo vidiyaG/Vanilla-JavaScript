@@ -1,49 +1,67 @@
-import { LocalDatabase } from "../TASK-3/database.js";
+import { LocalDatabase, initializeDatabase } from "../TASK-3/database2.js";
+import {
+    showElement,
+    hideElement,
+    spinnerId,
+    messageElementId,
+    messages,
+    SCROLL_DEBOUNCE_TIME,
+    SEARCH_DEBOUNCE_TIME,
+} from "./utils.js";
+
 const searchInput = document.getElementById("search-input");
 const suggestionsContainer = document.getElementById("suggestions-container");
 const clearBtn = document.getElementById("clear-btn");
-const spinner = document.getElementById("spinner-icon");
 
 let db = null;
-let suggestions = [];
 const LIMIT = 10;
 let currentPage = 0;
 let currentQuery = null;
 
-let abortController = null;
-let debounceTimeout = null;
-const debounceTime = 300;
+let hasMoreResults = true;
 
-const showSpinner = () => {
-    spinner.style.display = "flex";
-};
-const hideSpinner = () => {
-    spinner.style.display = "none";
-};
-const fetchSuggestions = async (searchQueryChanged) => {
-    // if (isFetching) {
-    //     return;
-    // }
-    if (searchQueryChanged) {
-        suggestionsContainer.innerHTML = "";
+const fetchSuggestions = async (clearScrollContainer) => {
+    if (!hasMoreResults) {
+        return;
+    } else {
+        hideElement(messageElementId);
     }
-
     try {
         isFetching = true;
-        showSpinner();
-        suggestions = await db.fetchData(currentQuery, currentPage, LIMIT);
-        isFetching = false;
-        if (suggestions?.length > 0) appendSuggestions(suggestions);
+        showElement(spinnerId);
+        const suggestions = await db.fetch(currentQuery, currentPage, LIMIT);
+        onFetchSuccess(clearScrollContainer, suggestions);
     } catch (e) {
         console.error("Error fetching Districts", e);
     } finally {
         isFetching = false;
-        hideSpinner();
+        hideElement(spinnerId);
     }
 };
+const onFetchSuccess = (clearScrollContainer, suggestions) => {
+    isFetching = false;
+    hideElement(spinnerId);
 
+    if (clearScrollContainer) {
+        suggestionsContainer.innerHTML = "";
+    }
+    if (suggestions?.length > 0) {
+        appendSuggestions(suggestions);
+    }
+
+    //Check if all the suggestions are loaded per query
+    if (
+        suggestions?.length == 0 ||
+        (suggestions?.length > 0 && suggestions?.length < LIMIT)
+    ) {
+        hasMoreResults = false;
+        showElement(messageElementId, messages.ALL_RECORDS_LOADED);
+    } else {
+        hasMoreResults = true;
+        hideElement(messageElementId);
+    }
+};
 const appendSuggestions = (suggestions) => {
-    // suggestionsContainer.innerHTML = "";
     if (isFetching) {
         return;
     }
@@ -72,13 +90,12 @@ const appendSuggestions = (suggestions) => {
 let isFetching = false;
 
 const handleScroll = async () => {
-    console.log(isFetching);
-    if (isFetching) return;
+    // if (isFetching) return;
     const scrollPercentage =
         (suggestionsContainer.scrollTop + suggestionsContainer.clientHeight) /
         suggestionsContainer.scrollHeight;
 
-    if (scrollPercentage > 0.8) {
+    if (scrollPercentage > 0.7) {
         currentPage++;
         fetchSuggestions(false);
     }
@@ -98,7 +115,6 @@ const debounce = (func, delay) => {
 
 const handleInput = async (event) => {
     const query = event.target.value.trim();
-    console.log("----------- ", query);
     if (query === "") {
         // suggestionsContainer.style.display = "none";
         currentQuery = null;
@@ -109,20 +125,38 @@ const handleInput = async (event) => {
     }
     currentPage = 0;
     suggestionsContainer.scrollTop = 0;
-    suggestionsContainer.innerHTML = "";
-
+    hasMoreResults = true;
     fetchSuggestions(true);
 };
-searchInput.addEventListener("input", debounce(handleInput, 800));
+searchInput.addEventListener(
+    "input",
+    debounce(handleInput, SEARCH_DEBOUNCE_TIME)
+);
 // searchInput.addEventListener("focus", handleInput);
 
-suggestionsContainer.addEventListener("scroll", debounce(handleScroll, 300));
+suggestionsContainer.addEventListener(
+    "scroll",
+    debounce(handleScroll, SCROLL_DEBOUNCE_TIME)
+);
 clearBtn.addEventListener("click", () => {
     searchInput.value = "";
     suggestionsContainer.innerHTML = "";
 });
-window.addEventListener("load", (event) => {
+window.addEventListener("load", async (event) => {
     // page is fully loaded
-    db = new LocalDatabase();
-    fetchSuggestions(true);
+    hideElement(spinnerId);
+
+    try {
+        showElement(spinnerId);
+        db = await initializeDatabase();
+        if (db.isReady) {
+            console.log("connected to db");
+            hideElement(spinnerId);
+            await fetchSuggestions(true);
+        }
+    } catch (error) {
+        showElement(messageElementId, error);
+        hideElement(spinnerId);
+        console.log(error);
+    }
 });
