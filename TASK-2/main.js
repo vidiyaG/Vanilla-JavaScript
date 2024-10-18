@@ -1,4 +1,4 @@
-import { LocalDatabase, initializeDatabase } from "../TASK-3/database2.js";
+import { LocalDatabase, initializeDatabase } from "../TASK-3/database.js";
 import {
     showElement,
     hideElement,
@@ -14,7 +14,7 @@ const suggestionsContainer = document.getElementById("suggestions-container");
 const clearBtn = document.getElementById("clear-btn");
 
 let db = null;
-const LIMIT = 10;
+const LIMIT = 50;
 let currentPage = 0;
 let currentQuery = null;
 
@@ -95,7 +95,7 @@ const handleScroll = async () => {
         (suggestionsContainer.scrollTop + suggestionsContainer.clientHeight) /
         suggestionsContainer.scrollHeight;
 
-    if (scrollPercentage > 0.7) {
+    if (scrollPercentage > 0.75) {
         currentPage++;
         fetchSuggestions(false);
     }
@@ -149,7 +149,7 @@ window.addEventListener("load", async (event) => {
     try {
         showElement(spinnerId);
         db = await initializeDatabase();
-        if (db.isReady) {
+        if (db.isConnected) {
             console.log("connected to db");
             hideElement(spinnerId);
             await fetchSuggestions(true);

@@ -1,7 +1,8 @@
 export const spinnerId = "spinner-icon";
 export const messageElementId = "message";
-export const SEARCH_DEBOUNCE_TIME = 500;
-export const SCROLL_DEBOUNCE_TIME = 200;
+export const SEARCH_DEBOUNCE_TIME = 300;
+export const SCROLL_DEBOUNCE_TIME = 100;
+export const API_URL = "http://localhost:3000";
 export const messages = {
     ALL_RECORDS_LOADED: "No more results",
     DB_CONNECTED: "Connected to Database successfully",
