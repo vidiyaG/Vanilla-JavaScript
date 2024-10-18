@@ -17,6 +17,7 @@ let db = null;
 const LIMIT = 50;
 let currentPage = 0;
 let currentQuery = null;
+let currentFetchPromise = null;
 
 let hasMoreResults = true;
 
@@ -26,17 +27,29 @@ const fetchSuggestions = async (clearScrollContainer) => {
     } else {
         hideElement(messageElementId);
     }
-    try {
-        isFetching = true;
-        showElement(spinnerId);
-        const suggestions = await db.fetch(currentQuery, currentPage, LIMIT);
-        onFetchSuccess(clearScrollContainer, suggestions);
-    } catch (e) {
-        console.error("Error fetching Districts", e);
-    } finally {
-        isFetching = false;
-        hideElement(spinnerId);
+
+    if (currentFetchPromise) {
+        console.log("Previous fetch cancelled.");
+        return; // Or you can reject it based on your needs
     }
+    currentFetchPromise = (async () => {
+        try {
+            isFetching = true;
+            showElement(spinnerId);
+            const suggestions = await db.fetch(
+                currentQuery,
+                currentPage,
+                LIMIT
+            );
+            onFetchSuccess(clearScrollContainer, suggestions);
+        } catch (e) {
+            console.error("Error fetching Districts", e);
+        } finally {
+            isFetching = false;
+            hideElement(spinnerId);
+            currentFetchPromise = null;
+        }
+    })();
 };
 const onFetchSuccess = (clearScrollContainer, suggestions) => {
     isFetching = false;
@@ -142,6 +155,7 @@ clearBtn.addEventListener("click", () => {
     searchInput.value = "";
     suggestionsContainer.innerHTML = "";
     currentQuery = null;
+    currentPage = 0;
     hasMoreResults = true;
     fetchSuggestions(true);
 });
