@@ -34,15 +34,18 @@ export class LocalDatabase {
                         .split("\n")
                         .map((row) => row.split(","));
                     const headers = rows[0];
-
+                    console.log(headers);
+                    console.log(rows);
                     rows.slice(1).forEach((row) => {
                         const record = {};
                         row.forEach((cell, index) => {
-                            record[headers[index].trim()] = cell.trim();
+                            record[headers[index]?.trim()] = cell?.trim();
                         });
-
-                        this.records.set(record.District_name, record);
+                        if (record.District_code) {
+                            this.records.set(record.District_name, record);
+                        }
                     });
+                    // console.log(this.records);
 
                     this.isConnected = true;
                     resolve("Database connected successfully");
